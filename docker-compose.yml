@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  m3u2STRM:
+    build: .
+    environment:
+      - MOVIES_M3U_URL=YOUR_MOVIE_PLAYLIST_URL_HERE  # Replace with your movie M3U playlist URL
+      - TVEPISODES_M3U_URL=YOUR_TV_PLAYLIST_URL_HERE  # Replace with your TV shows M3U playlist URL
+      - UPDATE_INTERVAL=0 */6 * * *  # Every 6 hours by default
+    volumes:
+      - ./movieoutput:/movieoutput  # Mount local movie output directory
+      - ./TVEpisodesoutput:/TVEpisodesoutput  # Mount local TV episodes output directory 
