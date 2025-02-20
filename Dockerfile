@@ -13,6 +13,12 @@ WORKDIR /app
 # Copy your Python application
 COPY . .
 
+# Verify files were copied
+RUN echo "Verifying copied files:" && \
+    ls -la /app && \
+    echo "Python files:" && \
+    find /app -name "*.py"
+
 # Install Python dependencies (assuming you have requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -30,5 +36,11 @@ RUN touch /var/log/cron.log
 # Script to update environment variables in crontab and start services
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Final verification of critical files
+RUN echo "Final file verification:" && \
+    ls -la /app/main.py && \
+    ls -la /entrypoint.sh && \
+    ls -la /etc/cron.d/m3u2strm
 
 ENTRYPOINT ["/entrypoint.sh"] 
