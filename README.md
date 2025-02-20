@@ -15,4 +15,4 @@ For TVshows it will append your base m3u_url with /X from 1-20 as most providers
 
 If the Movies and Episodes libraries are already set up in Emby/Jellyfin scanning library should add the content.
 
-https://buymeacoffee.com/jamieeburgess
+<a href="https://buymeacoffee.com/jamieeburgess" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
