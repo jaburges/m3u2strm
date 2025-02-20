@@ -8,8 +8,8 @@ mv /etc/cron.d/m3u2strm.tmp /etc/cron.d/m3u2strm
 cron
 
 # Create required directories with proper permissions
-mkdir -p /movieoutput/movies
-mkdir -p /TVEpisodesoutput/tvshows
+mkdir -p /movieoutput
+mkdir -p /TVEpisodesoutput
 chmod -R 777 /movieoutput
 chmod -R 777 /TVEpisodesoutput
 

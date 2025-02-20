@@ -26,7 +26,7 @@ class Movie(object):
   def getFilename(self):
     '''Getter to get the filename for the stream file
     
-    :returns: the fully constructed filename with type directory ea. "movies/The Longest Yard - 720p.strm"
+    :returns: the fully constructed filename with type directory ea. "The Longest Yard - 720p.strm"
     :rtype: str
     '''
     filestring = [self.title.replace(':','-').replace('*','_').replace('/','_').replace('?','')]
@@ -40,7 +40,7 @@ class Movie(object):
       self.year = "A"
     if self.resolution:
       filestring.append(self.resolution)
-    return os.path.join(self.output_dir, 'movies', self.title.replace(':','-').replace('*','_').replace('/','_').replace('?','') + ' - ' + self.year, ' - '.join(filestring) + ".strm")
+    return os.path.join(self.output_dir, self.title.replace(':','-').replace('*','_').replace('/','_').replace('?','') + ' - ' + self.year, ' - '.join(filestring) + ".strm")
   
   def makeStream(self):
     filename = self.getFilename()
@@ -100,7 +100,7 @@ class TVEpisode(object):
   def getFilename(self):
     '''Getter to get the filename for the stream file
     
-    :returns: the fully constructed filename with type directory ea. "tvshows/Star Trek the Next Generation - Season 02/Star Trek the Next Generation - S02E07 - The Borgs kill Picard - 1080p.strm"
+    :returns: the fully constructed filename with type directory ea. "Star Trek the Next Generation/Star Trek the Next Generation - S02E07 - The Borgs kill Picard - 1080p.strm"
     :rtype: str
     '''
     filestring = [self.showtitle.replace(':','-').replace('*','_').replace('/','_').replace('?','')]
@@ -115,7 +115,7 @@ class TVEpisode(object):
     if self.resolution:
       filestring.append(self.resolution.strip())
     
-    base_path = os.path.join(self.output_dir, 'tvshows', self.showtitle.strip().replace(':','-').replace('/','_').replace('*','_').replace('?',''))
+    base_path = os.path.join(self.output_dir, self.showtitle.strip().replace(':','-').replace('/','_').replace('*','_').replace('?',''))
     if self.seasonnumber:
       season_path = os.path.join(base_path, f"Season {str(self.seasonnumber.strip()).zfill(2)}")
       return os.path.join(season_path, ' - '.join(filestring).replace(':','-').replace('*','_') + ".strm")
@@ -149,35 +149,8 @@ class rawStreamList(object):
     self.log = logger.Logger(__file__, log_level=logger.LogLevel.DEBUG)
     self.streams = {}
     self.filename = filename
-    # Initialize counters for movies
-    self.movie_success = 0
-    self.movie_failed = 0
-    self.movie_skipped = 0
-    # Initialize counters for TV episodes
-    self.tv_success = 0
-    self.tv_failed = 0
-    self.tv_skipped = 0
     self.readLines()
     self.parseLine()
-    # Print summary after processing
-    self.print_summary()
-
-  def print_summary(self):
-    print("\n" + "="*50)
-    print("PROCESSING SUMMARY")
-    print("="*50)
-    print("\nMOVIES:")
-    print(f"  Successful: {self.movie_success}")
-    print(f"  Failed: {self.movie_failed}")
-    print(f"  Skipped: {self.movie_skipped}")
-    print(f"  Total Processed: {self.movie_success + self.movie_failed + self.movie_skipped}")
-    
-    print("\nTV EPISODES:")
-    print(f"  Successful: {self.tv_success}")
-    print(f"  Failed: {self.tv_failed}")
-    print(f"  Skipped: {self.tv_skipped}")
-    print(f"  Total Processed: {self.tv_success + self.tv_failed + self.tv_skipped}")
-    print("\n" + "="*50 + "\n")
 
   def readLines(self):
     self.lines = [line.rstrip('\n') for line in open(self.filename, encoding="utf8")]
@@ -260,93 +233,33 @@ class rawStreamList(object):
       self.parseLiveStream(streaminfo, streamURL)
   
   def parseVodTv(self, streaminfo, streamURL):
-    # Get and validate title
+    #print(streaminfo)
     title = tools.infoMatch(streaminfo)
-    if not title:
-        print(f"Skipping: No title match found in stream info: {streaminfo}")
-        self.tv_skipped += 1
-        return
-        
-    title = tools.parseMovieInfo(title.group())
-    if not title or not title.strip():
-        print(f"Skipping: Empty or invalid title after parsing: {streaminfo}")
-        self.tv_skipped += 1
-        return
-    
-    # Clean the title
-    title = title.strip()
-    
-    # Handle resolution
+    if title:
+      title = tools.parseMovieInfo(title.group())
     resolution = tools.resolutionMatch(streaminfo)
     if resolution:
-        resolution = tools.parseResolution(resolution)
-        title = tools.stripResolution(title)
-    
-    # Parse episode information
-    try:
-        episodeinfo = tools.parseEpisode(title)
-        if not episodeinfo:
-            print(f"Skipping: Could not parse episode information from title: {title}")
-            self.tv_skipped += 1
-            return
-            
-        # Create episode based on info type
-        if len(episodeinfo) == 3:
-            showtitle = episodeinfo[0]
-            if not showtitle or not showtitle.strip():
-                print(f"Skipping: Empty show title after parsing: {title}")
-                self.tv_skipped += 1
-                return
-                
-            airdate = episodeinfo[2]
-            episodename = episodeinfo[1]
-            episode = TVEpisode(
-                showtitle=showtitle.strip(),
-                url=streamURL,
-                resolution=resolution,
-                episodename=episodename,
-                airdate=airdate
-            )
-        else:
-            showtitle = episodeinfo[0]
-            if not showtitle or not showtitle.strip():
-                print(f"Skipping: Empty show title after parsing: {title}")
-                self.tv_skipped += 1
-                return
-                
-            episodename = episodeinfo[1]
-            seasonnumber = episodeinfo[2]
-            episodenumber = episodeinfo[3]
-            language = episodeinfo[4] if len(episodeinfo) > 4 else None
-            
-            # Validate season and episode numbers
-            if not seasonnumber or not episodenumber:
-                print(f"Skipping: Missing season or episode number: {title}")
-                self.tv_skipped += 1
-                return
-                
-            episode = TVEpisode(
-                showtitle=showtitle.strip(),
-                url=streamURL,
-                seasonnumber=seasonnumber,
-                episodenumber=episodenumber,
-                resolution=resolution,
-                language=language,
-                episodename=episodename
-            )
-        
-        print(f"Debug: Parsed TV Show - {episode.__dict__}")
-        print(f"Debug: Generated filename: {episode.getFilename()}")
-        episode.makeStream()
-        self.tv_success += 1
-        
-    except Exception as e:
-        print(f"Error processing TV episode: {str(e)}")
-        print(f"Stream info: {streaminfo}")
-        print(f"Title: {title}")
-        self.tv_failed += 1
-        return
-
+      resolution = tools.parseResolution(resolution)
+      #print(resolution)
+      title = tools.stripResolution(title)
+    episodeinfo = tools.parseEpisode(title)
+    if episodeinfo:
+      if len(episodeinfo) == 3:
+        showtitle = episodeinfo[0]
+        airdate = episodeinfo[2]
+        episodename = episodeinfo[1]
+        episode = TVEpisode(showtitle, streamURL, resolution=resolution, episodename=episodename, airdate=airdate)
+      else:
+        showtitle = episodeinfo[0]
+        episodename = episodeinfo[1]
+        seasonnumber = episodeinfo[2]
+        episodenumber = episodeinfo[3]
+        language = episodeinfo[4]
+        episode = TVEpisode(showtitle, streamURL, seasonnumber=seasonnumber, episodenumber=episodenumber, resolution=resolution, language=language, episodename=episodename)
+    print(episode.__dict__, 'TVSHOW')
+    print(episode.getFilename())
+    episode.makeStream()
+  
   def parseLiveStream(self, streaminfo, streamURL):
     #print(streaminfo, "LIVETV")
     pass
@@ -354,10 +267,9 @@ class rawStreamList(object):
   def parseVodMovie(self, streaminfo, streamURL):
     title = tools.parseMovieInfo(streaminfo)
     
-    # Skip if title is empty, None, or just whitespace
-    if not title or not title.strip():
-        print(f"Skipping: Empty or invalid title found in stream info: {streaminfo}")
-        self.movie_skipped += 1
+    # Skip if title is empty, None, just whitespace, or just parentheses
+    if not title or not title.strip() or title.strip() == '()':
+        print(f"Skipping: Empty, invalid, or parentheses-only title found in stream info: {streaminfo}")
         return
     
     # Clean the title
@@ -373,9 +285,8 @@ class rawStreamList(object):
         year = year.group().strip()
     
     # Ensure title is a string and still valid after processing
-    if not isinstance(title, str) or not title.strip():
+    if not isinstance(title, str) or not title.strip() or title.strip() == '()':
         print(f"Skipping: Invalid title after processing: {title}")
-        self.movie_skipped += 1
         return
     
     language = tools.languageMatch(title)
@@ -384,22 +295,13 @@ class rawStreamList(object):
         language = language.group().strip()
     
     # Final check to ensure title is still valid after all processing
-    if not title.strip():
-        print(f"Skipping: Title became empty after processing")
-        self.movie_skipped += 1
+    if not title.strip() or title.strip() == '()':
+        print(f"Skipping: Title became empty or invalid after processing")
         return
     
-    try:
-        moviestream = Movie(title, streamURL, year=year, resolution=resolution, language=language)
-        print(f"Debug: Parsed movie - {{'title': '{title}', 'url': '{streamURL}', 'year': '{year}', 'resolution': {resolution}, 'language': {language}'}}") # Debug line
-        moviestream.makeStream()  # Actually create the STRM file
-        self.movie_success += 1
-    except Exception as e:
-        print(f"Error creating movie: {str(e)}")
-        print(f"Stream info: {streaminfo}")
-        print(f"Title: {title}")
-        self.movie_failed += 1
-        return
+    moviestream = Movie(title, streamURL, year=year, resolution=resolution, language=language)
+    print(f"Debug: Parsed movie - {{'title': '{title}', 'url': '{streamURL}', 'year': '{year}', 'resolution': {resolution}, 'language': {language}'}}") # Debug line
+    moviestream.makeStream()  # Actually create the STRM file
 
 
 
