@@ -1,6 +1,9 @@
 # m3u2strm-docker
 Hi there, 
 Been looking for a way to add VOD content from my IPTV service to Emby or Jellyfin, so rebuilt a docker container of a fork from the original m3u2strm python and made some updates.
+
+This is my first personal dev project so be kind ;) 
+
 Convert m3u files to strm files with the folder structure needed to use them in emby / jellfin etc
 For TVshows it will append your base m3u_url with /X from 1-20 as most providers need more than one m3u file.
 
